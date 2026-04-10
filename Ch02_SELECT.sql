@@ -1,6 +1,7 @@
 use shopdb;
-
+-- -----------------------------------
 -- 01 select group by
+-- -----------------------------------
 -- UserId별 Amount 총합(집계함수 : sum))
 select userid,sum(amount) as '구매총량' from buytbl group by userid;
 -- userid별 amount*price 의 총합(sum)
@@ -47,6 +48,27 @@ use world;
 select CountryCode,sum(Population) from city group by CountryCode;
 -- 6 country 테이블에서 Continent 별로 LifeExpectancy의 평균을 구하세요(world DB에서진행)
 select Continent,avg(LifeExpectancy) from country group by Continent;
+
+-- -----------------------------------
+-- 02 select group by + having
+-- -----------------------------------
+use shopdb;
+select * from buytbl;
+
+select 
+userid, sum(amount) as '구매총량'
+from buytbl 
+group by userid 
+-- where sum(amount) >= 5; -- group by 은 where 불가
+having 구매총량 >= 5; -- as 로 정의된 컬럼은 '' 기입하지 않음
+
+select 
+userid, sum(amount) as '구매총량'
+from buytbl 
+group by userid 
+-- where sum(amount) >= 5; -- group by 은 where 불가
+having 구매총량 >= 5;
+
 
 
 
