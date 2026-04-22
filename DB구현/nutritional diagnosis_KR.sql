@@ -1,0 +1,182 @@
+-- 기존 테이블 삭제 (역참조 순서 고려)
+DROP TABLE IF EXISTS 배송;
+DROP TABLE IF EXISTS 장바구니상품;
+DROP TABLE IF EXISTS 장바구니;
+DROP TABLE IF EXISTS 결제;
+DROP TABLE IF EXISTS 상품영양소;
+DROP TABLE IF EXISTS 영양소;
+DROP TABLE IF EXISTS 영양진단결과;
+DROP TABLE IF EXISTS 주문상세;
+DROP TABLE IF EXISTS 주문;
+DROP TABLE IF EXISTS 상품카테고리;
+DROP TABLE IF EXISTS 카테고리;
+DROP TABLE IF EXISTS 상품;
+DROP TABLE IF EXISTS 판매자;
+DROP TABLE IF EXISTS 사용자;
+
+-- 사용자 테이블
+CREATE TABLE 사용자 (
+  사용자ID INT AUTO_INCREMENT PRIMARY KEY,
+  이메일 VARCHAR(255) NOT NULL UNIQUE,
+  비밀번호 VARCHAR(255) NOT NULL,
+  이름 VARCHAR(100) NOT NULL,
+  권한 VARCHAR(50),
+  가입일 DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 판매자 테이블 (사용자와 1:1 관계)
+CREATE TABLE 판매자 (
+  판매자ID INT AUTO_INCREMENT PRIMARY KEY,
+  사용자ID INT NOT NULL UNIQUE,
+  상호명 VARCHAR(255) NOT NULL,
+  승인상태 VARCHAR(50),
+  CONSTRAINT fk_판매자_사용자
+    FOREIGN KEY (사용자ID)
+    REFERENCES 사용자(사용자ID)
+);
+
+-- 상품 테이블
+CREATE TABLE 상품 (
+  상품ID INT AUTO_INCREMENT PRIMARY KEY,
+  판매자ID INT NOT NULL,
+  상품명 VARCHAR(255) NOT NULL,
+  상품설명 TEXT,
+  가격 INT NOT NULL,
+  재고 INT NOT NULL,
+  등록일 DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_상품_판매자
+    FOREIGN KEY (판매자ID)
+    REFERENCES 판매자(판매자ID)
+);
+
+-- 카테고리 테이블
+CREATE TABLE 카테고리 (
+  카테고리ID INT AUTO_INCREMENT PRIMARY KEY,
+  카테고리명 VARCHAR(255) NOT NULL
+);
+
+-- 상품카테고리 (M:N 해결 테이블)
+CREATE TABLE 상품카테고리 (
+  상품ID INT,
+  카테고리ID INT,
+  PRIMARY KEY (상품ID, 카테고리ID),
+  CONSTRAINT fk_상품카테고리_상품
+    FOREIGN KEY (상품ID) REFERENCES 상품(상품ID),
+  CONSTRAINT fk_상품카테고리_카테고리
+    FOREIGN KEY (카테고리ID) REFERENCES 카테고리(카테고리ID)
+);
+
+-- 주문 테이블
+CREATE TABLE 주문 (
+  주문ID INT AUTO_INCREMENT PRIMARY KEY,
+  사용자ID INT NOT NULL,
+  총금액 INT NOT NULL,
+  주문상태 VARCHAR(50),
+  주문일 DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_주문_사용자
+    FOREIGN KEY (사용자ID)
+    REFERENCES 사용자(사용자ID)
+);
+
+-- 주문상세 테이블
+CREATE TABLE 주문상세 (
+  주문상세ID INT AUTO_INCREMENT PRIMARY KEY,
+  주문ID INT NOT NULL,
+  상품ID INT NOT NULL,
+  수량 INT NOT NULL,
+  가격 INT NOT NULL,
+  CONSTRAINT fk_주문상세_주문
+    FOREIGN KEY (주문ID)
+    REFERENCES 주문(주문ID),
+  CONSTRAINT fk_주문상세_상품
+    FOREIGN KEY (상품ID)
+    REFERENCES 상품(상품ID)
+);
+
+-- 영양진단결과 테이블
+CREATE TABLE 영양진단결과 (
+  진단ID INT AUTO_INCREMENT PRIMARY KEY,
+  사용자ID INT NOT NULL,
+  진단일 DATETIME DEFAULT CURRENT_TIMESTAMP,
+  단백질상태 VARCHAR(50),
+  비타민상태 VARCHAR(50),
+  탄수화물상태 VARCHAR(50),
+  지방상태 VARCHAR(50),
+  결과요약 TEXT,
+  CONSTRAINT fk_영양진단결과_사용자
+    FOREIGN KEY (사용자ID)
+    REFERENCES 사용자(사용자ID)
+);
+
+-- 영양소 테이블
+CREATE TABLE 영양소 (
+  영양소ID INT AUTO_INCREMENT PRIMARY KEY,
+  영양소명 VARCHAR(255) NOT NULL
+);
+
+-- 상품영양소 테이블 (M:N 해결)
+CREATE TABLE 상품영양소 (
+  상품ID INT,
+  영양소ID INT,
+  함량 FLOAT,
+  PRIMARY KEY (상품ID, 영양소ID),
+  CONSTRAINT fk_상품영양소_상품
+    FOREIGN KEY (상품ID)
+    REFERENCES 상품(상품ID),
+  CONSTRAINT fk_상품영양소_영양소
+    FOREIGN KEY (영양소ID)
+    REFERENCES 영양소(영양소ID)
+);
+
+-- 결제 테이블 (주문과 1:1)
+CREATE TABLE 결제 (
+  결제ID INT AUTO_INCREMENT PRIMARY KEY,
+  주문ID INT NOT NULL UNIQUE,
+  결제금액 INT NOT NULL,
+  결제수단 VARCHAR(50),
+  결제상태 VARCHAR(50),
+  결제일 DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_결제_주문
+    FOREIGN KEY (주문ID)
+    REFERENCES 주문(주문ID)
+);
+
+-- 장바구니 테이블
+CREATE TABLE 장바구니 (
+  장바구니ID INT AUTO_INCREMENT PRIMARY KEY,
+  사용자ID INT NOT NULL UNIQUE,
+  생성일 DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_장바구니_사용자
+    FOREIGN KEY (사용자ID)
+    REFERENCES 사용자(사용자ID)
+);
+
+-- 장바구니상품 테이블
+CREATE TABLE 장바구니상품 (
+  장바구니ID INT,
+  상품ID INT,
+  수량 INT NOT NULL,
+  PRIMARY KEY (장바구니ID, 상품ID),
+  CONSTRAINT fk_장바구니상품_장바구니
+    FOREIGN KEY (장바구니ID)
+    REFERENCES 장바구니(장바구니ID),
+  CONSTRAINT fk_장바구니상품_상품
+    FOREIGN KEY (상품ID)
+    REFERENCES 상품(상품ID)
+);
+
+-- 배송 테이블 (주문과 1:1)
+CREATE TABLE 배송 (
+  배송ID INT AUTO_INCREMENT PRIMARY KEY,
+  주문ID INT NOT NULL UNIQUE,
+  수령인 VARCHAR(100),
+  연락처 VARCHAR(50),
+  주소 VARCHAR(255),
+  상세주소 VARCHAR(255),
+  배송상태 VARCHAR(50),
+  배송시작일 DATETIME,
+  배송완료일 DATETIME,
+  CONSTRAINT fk_배송_주문
+    FOREIGN KEY (주문ID)
+    REFERENCES 주문(주문ID)
+);
